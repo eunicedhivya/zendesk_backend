@@ -18,7 +18,7 @@ app.use(
   cors({
     origin: [
       process.env.FRONTEND,
-      "https://urlshortener-clone.herokuapp.com",
+      "https://zendeskclone-ed.herokuapp.com",
       "http://localhost:3000",
     ],
     credentials: true,
@@ -47,8 +47,8 @@ const PORT = process.env.PORT;
 
 // Base EndPoint
 app.get("/", (request, response) => {
-  response.send({
-    msg: "Zen Desk Clone",
+  response.json({
+    message: "Zen Desk Clone",
   });
 });
 
