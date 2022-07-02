@@ -5,7 +5,7 @@ import client from "../db.js";
 import nodemailer from "nodemailer";
 import cryptoRandomString from "crypto-random-string";
 import dotenv from "dotenv";
-// import auth from "../middleware/auth.js";
+import auth from "../middleware/auth.js";
 // import { ObjectId } from "mongodb";
 
 import {
@@ -28,7 +28,7 @@ const COL_NAME = "users";
 // const DB_CMD = ;
 
 router.get("/", async function (request, response) {});
-router.post("/all", async function (request, response) {
+router.post("/all", auth, async function (request, response) {
   try {
     const listUsers = await client
       .db(DB_NAME)
@@ -129,13 +129,25 @@ router.post("/login", async function (request, response) {
           .status(401)
           .json({ message: "Invalid Credentials", type: "error" });
       } else {
-        const token = jwt.sign({ id: userFromDB._id }, process.env.SECRET_KEY);
+        const token = jwt.sign(
+          {
+            id: userFromDB._id,
+            fname: userFromDB.fname,
+            role: userFromDB.usertype,
+          },
+          process.env.SECRET_KEY
+        );
 
         token
           ? response.status(201).json({
               message: "Login Successful",
               id: userFromDB._id,
               type: "success",
+              user: {
+                id: userFromDB._id,
+                fname: userFromDB.fname,
+                role: userFromDB.usertype,
+              },
               token: token,
             })
           : response.status(404).json({
@@ -145,7 +157,7 @@ router.post("/login", async function (request, response) {
       }
     }
   } catch (err) {
-    console.log(err);
+    // console.log(err);
     response.status(500).json({ message: "Internal Server Error" });
   }
 });
@@ -154,16 +166,32 @@ router.post("/loggedIn", (request, response) => {
   try {
     const token = request.body.token;
     if (!token) {
-      return response.json(false);
+      return response.json({
+        status: false,
+      });
     }
 
     jwt.verify(token, process.env.SECRET_KEY);
 
     const decoded = jwt.decode(token, process.env.SECRET_KEY);
 
-    response.json(true);
+    response.json({
+      status: true,
+      user: decoded,
+    });
   } catch (err) {
-    response.json(false);
+    response.json({
+      status: false,
+    });
+  }
+});
+
+router.get("/logout", (request, response) => {
+  try {
+    response.clearCookie("token").status(200).json({ message: "Logged out" });
+  } catch (err) {
+    console.error(err);
+    response.status(500).json({ message: "Internal Server Error" });
   }
 });
 
